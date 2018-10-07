@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <spirv_glsl.hpp>
 #include "cmd_line/CMDParser.h"
 
@@ -36,6 +37,55 @@ static bool WriteStringToFile(const char *path, const char *string) {
 	return true;
 }
 
+void PrintHelp(const std::vector<CMDArgument*> arguments) {
+	std::cout << "Arguments:\n";
+
+	for (const auto& argument : arguments) {
+		std::cout << std::left << std::setw(13) << argument->GetIdentifier() << std::setw(45) << argument->GetDescription();
+		if (argument->IsRequired()) {
+			std::cout << "required";
+		}
+		std::cout << '\n';
+	}
+
+	std::cout << '\n' << "Example:" << '\n'
+			  << "mantis-spirv-cross --input flat.spv --output flat.frag --lang glsl-100-es" << std::endl;
+}
+
+bool CrossCompile(const std::string& input_file, const std::string& output_file, const std::string& language) {
+	// Set some options.
+	spirv_cross::CompilerGLSL::Options options;
+
+	if (language == "glsl-100-es") {
+		options.version = 100;
+		options.es = true;
+	}
+	else if (language == "glsl-330") {
+		options.version = 330;
+		options.es = false;
+	}
+	else {
+		std::cerr << "Invalid target language '" << language << "'" << std::endl;
+		return false;
+	}
+
+	std::vector<uint32_t> spirv_binary = ReadSpirvFile(input_file.data());
+
+	std::string source;
+
+	try {
+		spirv_cross::CompilerGLSL glsl(std::move(spirv_binary));
+		glsl.set_common_options(options);
+		source = glsl.compile();
+	}
+	catch (const std::exception& e) {
+		std::cerr << "Invalid SPIR-V file: " << input_file << std::endl;
+		return false;
+	}
+
+	return WriteStringToFile(output_file.data(), source.data());
+}
+
 int main(int argc, const char** argv) {
 
 	CMDArgument show_help(CMDArgument::Type::Bool, "--help", "show help", false);
@@ -45,7 +95,7 @@ int main(int argc, const char** argv) {
 
 	CMDParser cmd_parser;
 
-	if (!cmd_parser.Parse(argc, argv, {&show_help, &input, &output, &lang})) {
+	if (!cmd_parser.Parse(argc, argv, { &show_help, &input, &output, &lang }) && !show_help.GetBoolValue()) {
 		std::vector<std::string> errors = cmd_parser.GetErrors();
 		std::cerr << "Errors:" << std::endl;
 
@@ -56,37 +106,16 @@ int main(int argc, const char** argv) {
 		return 1;
 	}
 
-	// Set some options.
-	spirv_cross::CompilerGLSL::Options options;
-
-	if (lang.GetStringValue() == "glsl-100-es") {
-		options.version = 100;
-		options.es = true;
-	}
-	else if (lang.GetStringValue() == "glsl-330") {
-		options.version = 330;
-		options.es = false;
+	if (show_help.GetBoolValue()) {
+		PrintHelp({ &show_help, &input, &output, &lang });
+		return 0;
 	}
 	else {
-		std::cerr << "Invalid value for '" << lang.GetIdentifier() << "' argument: " << lang.GetStringValue() << std::endl;
-		return 1;
+		if (CrossCompile(input.GetStringValue(), output.GetStringValue(), lang.GetStringValue())) {
+			return 0;
+		}
+		else {
+			return 1;
+		}
 	}
-
-	std::vector<uint32_t> spirv_binary = ReadSpirvFile(input.GetStringValue().data());
-
-	std::string source;
-
-	try {
-		spirv_cross::CompilerGLSL glsl(std::move(spirv_binary));
-		glsl.set_common_options(options);
-		source = glsl.compile();
-	}
-	catch (const std::exception& e) {
-		std::cerr << "Invalid SPIR-V file: " << input.GetStringValue() << std::endl;
-		return 1;
-	}
-
-	WriteStringToFile(output.GetStringValue().data(), source.data());
-
-	return 0;
 }

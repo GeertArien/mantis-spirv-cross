@@ -27,7 +27,7 @@ namespace MantisSpirvCross {
 		{ return identifier_; }
 
 		const std::string& GetDescription() const
-		{ return identifier_; }
+		{ return description_; }
 
 		const std::string& GetStringValue() const
 		{ return string_value_; }
