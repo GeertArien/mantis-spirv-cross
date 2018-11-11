@@ -95,27 +95,28 @@ int main(int argc, const char** argv) {
 
 	CMDParser cmd_parser;
 
-	if (!cmd_parser.Parse(argc, argv, { &show_help, &input, &output, &lang }) && !show_help.GetBoolValue()) {
-		std::vector<std::string> errors = cmd_parser.GetErrors();
-		std::cerr << "Errors:" << std::endl;
+	if (!cmd_parser.Parse(argc, argv, { &show_help, &input, &output, &lang })) {
+		if (!show_help.GetBoolValue()) {
+			std::vector<std::string> errors = cmd_parser.GetErrors();
+			std::cerr << "Errors:" << std::endl;
 
-		for (const auto& error : errors) {
-			std::cerr << "- " << error << std::endl;
+			for (const auto& error : errors) {
+				std::cerr << "- " << error << std::endl;
+			}
+
+			return 1;
 		}
-
-		return 1;
 	}
 
 	if (show_help.GetBoolValue()) {
 		PrintHelp({ &show_help, &input, &output, &lang });
 		return 0;
 	}
+
+	if (CrossCompile(input.GetStringValue(), output.GetStringValue(), lang.GetStringValue())) {
+		return 0;
+	}
 	else {
-		if (CrossCompile(input.GetStringValue(), output.GetStringValue(), lang.GetStringValue())) {
-			return 0;
-		}
-		else {
-			return 1;
-		}
+		return 1;
 	}
 }

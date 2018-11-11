@@ -17,6 +17,8 @@ set(SOURCES
 add_executable(${PROJECT_NAME} ${SOURCES})
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14)
 
+set(CMAKE_EXE_LINKER_FLAGS "-static")
+
 # spirv-cross
 set(SPIRV_CROSS_DIR "${LIB_DIR}/spirv-cross")
 set(SPIRV_CROSS_SOURCES
