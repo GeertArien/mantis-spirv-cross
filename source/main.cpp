@@ -1,10 +1,9 @@
 #include <iostream>
 #include <iomanip>
+#include <Parser.h>
+#include <Argument.h>
 #include <spirv_glsl.hpp>
-#include "cmd_line/CMDParser.h"
 
-
-using namespace MantisSpirvCross;
 
 static std::vector<uint32_t> ReadSpirvFile(const char *path) {
 	FILE *file = fopen(path, "rb");
@@ -35,21 +34,6 @@ static bool WriteStringToFile(const char *path, const char *string) {
 	fprintf(file, "%s", string);
 	fclose(file);
 	return true;
-}
-
-void PrintHelp(const std::vector<CMDArgument*> arguments) {
-	std::cout << "Arguments:\n";
-
-	for (const auto& argument : arguments) {
-		std::cout << std::left << std::setw(13) << argument->GetIdentifier() << std::setw(45) << argument->GetDescription();
-		if (argument->IsRequired()) {
-			std::cout << "required";
-		}
-		std::cout << '\n';
-	}
-
-	std::cout << '\n' << "Example:" << '\n'
-			  << "mantis-spirv-cross --input flat.spv --output flat.frag --lang glsl-100-es" << std::endl;
 }
 
 bool CrossCompile(const std::string& input_file, const std::string& output_file, const std::string& language) {
@@ -88,28 +72,23 @@ bool CrossCompile(const std::string& input_file, const std::string& output_file,
 
 int main(int argc, const char** argv) {
 
-	CMDArgument show_help(CMDArgument::Type::Bool, "--help", "show help", false);
-	CMDArgument input(CMDArgument::Type::String, "--input", "SPIR-V input file", std::string(), true);
-	CMDArgument output(CMDArgument::Type::String, "--output", "output file", std::string(), true);
-	CMDArgument lang(CMDArgument::Type::String, "--lang", "output language (glsl-100-es, glsl-330)", std::string(), true);
+	CMD::Argument show_help(CMD::Argument::Type::Bool, "--help", "show help", false);
+	CMD::Argument input(CMD::Argument::Type::String, "--input", "SPIR-V input file", std::string(), true);
+	CMD::Argument output(CMD::Argument::Type::String, "--output", "output file", std::string(), true);
+	CMD::Argument lang(CMD::Argument::Type::String, "--lang", "output language (glsl-100-es, glsl-330)", std::string(), true);
 
-	CMDParser cmd_parser;
+	CMD::Parser cmd_parser("--input flat.spv --output flat.frag --lang glsl-100-es");
+	cmd_parser.SetArguments({ &show_help, &input, &output, &lang });
 
-	if (!cmd_parser.Parse(argc, argv, { &show_help, &input, &output, &lang })) {
+	if (!cmd_parser.Parse(argc, argv)) {
 		if (!show_help.GetBoolValue()) {
-			std::vector<std::string> errors = cmd_parser.GetErrors();
-			std::cerr << "Errors:" << std::endl;
-
-			for (const auto& error : errors) {
-				std::cerr << "- " << error << std::endl;
-			}
-
+			cmd_parser.PrintErrors(std::cerr);
 			return 1;
 		}
 	}
 
 	if (show_help.GetBoolValue()) {
-		PrintHelp({ &show_help, &input, &output, &lang });
+		cmd_parser.PrintHelp(std::cout);
 		return 0;
 	}
 

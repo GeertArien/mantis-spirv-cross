@@ -1,3 +1,6 @@
 [submodule "libraries/spirv-cross"]
 	path = libraries/spirv-cross
 	url = git@github.com:KhronosGroup/SPIRV-Cross.git
+[submodule "libraries/cmd-parser"]
+	path = libraries/cmd-parser
+	url = git@github.com:GeertArien/cmd-parser.git

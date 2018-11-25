@@ -7,17 +7,19 @@ set(CMAKE_CXX_STANDARD 14)
 set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/source")
 set(LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libraries")
 set(SOURCES
-        "${SRC_DIR}/main.cpp"
-        "${SRC_DIR}/cmd_line/CMDParser.h"
-        "${SRC_DIR}/cmd_line/CMDParser.cpp"
-        "${SRC_DIR}/cmd_line/CMDArgument.h"
-        "${SRC_DIR}/cmd_line/CMDArgument.cpp")
+        "${SRC_DIR}/main.cpp")
 
 # Executable definition and properties
 add_executable(${PROJECT_NAME} ${SOURCES})
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14)
 
 set(CMAKE_EXE_LINKER_FLAGS "-static")
+
+# CMD-Parser
+set(CMD_PARSER_DIR "${LIB_DIR}/cmd-parser")
+add_subdirectory("${CMD_PARSER_DIR}")
+target_link_libraries(${PROJECT_NAME} "cmd-parser")
+target_include_directories(${PROJECT_NAME} PRIVATE "${CMD_PARSER_DIR}/include")
 
 # spirv-cross
 set(SPIRV_CROSS_DIR "${LIB_DIR}/spirv-cross")
